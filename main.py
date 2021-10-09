@@ -14,9 +14,3 @@ if __name__ == '__main__':
     widget.show()
     app.exec()
 
-    # dp = DataProcessor()
-    # dp.start_processing("input/sms-spam-corpus.csv", "prize, price".split(","))
-    # result = dp.get_result()
-    #
-    # print("spam" if result["ham"] < result["spam"] else "ham")
-
