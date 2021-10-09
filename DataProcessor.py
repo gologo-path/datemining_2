@@ -1,3 +1,8 @@
+import pandas as pd
+from nltk.corpus import stopwords
+from nltk.stem import PorterStemmer
+
+
 class DataProcessor:
     file_path = ""
     ham = []
@@ -5,30 +10,54 @@ class DataProcessor:
     words = []
     result = dict()
 
-    def set_file(self, file_path : str):
-        if not self.file_path == file_path:
-            self.file_path = file_path
+    def get_result(self) -> dict:
+        return self.result
 
-    def set_word(self, words: list):
-        if not self.words == words:
+    def start_processing(self, file_path: str, words: list):
+        if file_path != self.file_path or words != self.words:
+
+            self.file_path = file_path
             self.words = words
 
-    def get_result(self) -> dict:
-        return result
+            categories = self._load_from_file()
 
-    def start_processing(self):
-        categories = self._load_from_file()
+            for line in categories["ham"]:
+                self.ham.append(self._stemming(self._remove_stopwords(self._tokenization(self._clean_str(line)))))
 
-        for line in categories["ham"]:
-            self._ham.append(self._stemming(self._remove_stopwords(self._tokenization(self._clean_str(line)))))
+            for line in categories["spam"]:
+                self.spam.append(self._stemming(self._remove_stopwords(self._tokenization(self._clean_str(line)))))
 
-        for line in categories["spam"]:
-            self._spam.append(self._stemming(self._remove_stopwords(self._tokenization(self._clean_str(line)))))
+            ham = self._to_single_list(self.ham.copy())
+            spam = self._to_single_list(self.spam.copy())
 
+            for word in words:
+                if word not in ham:
+                    ham.append(self._stemming([word.lower()])[0])
 
+                if word not in spam:
+                    spam.append(self._stemming([word.lower()])[0])
 
-    def get_P(self, length: int, total_length: int) -> float:
-        return length / total_length
+            length = len(categories["ham"]) + len(categories["spam"])
+            Pham = len(categories["ham"]) / length
+            Pspam = len(categories["spam"]) / length
+
+            test_message_ham = 0
+            test_message_spam = 0
+
+            for word in words:
+                test_message_spam += self.get_word_count(word.lower(), spam)
+                test_message_ham += self.get_word_count(word.lower(), ham)
+
+            test_message_ham = (Pham * test_message_ham) / length
+            test_message_spam = (Pspam * test_message_spam) / length
+
+            self.result = {"ham": test_message_ham, "spam": test_message_spam}
+
+    def get_P(self, amount: int, total_amount: int) -> float:
+        return amount / total_amount
+
+    def get_word_count(self, word: str, collection: list):
+        return self._count_words(collection)[word] / len(collection)
 
     def _load_from_file(self) -> dict:
         _inp = pd.read_csv(self.file_path, encoding="cp1251")

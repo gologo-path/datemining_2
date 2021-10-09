@@ -3,6 +3,7 @@ from PyQt5.QtWidgets import QFileDialog, QMainWindow
 from PyQt5.QtCore import QObject, QThread, pyqtSignal
 from PyQt5.uic import loadUi
 from time import sleep
+from DataProcessor import DataProcessor
 
 
 class MainWindow(QMainWindow):
@@ -11,33 +12,17 @@ class MainWindow(QMainWindow):
         loadUi("gui/MainWindow.ui", self)
         self.browser_button.clicked.connect(self.file_browser)
         self.start_button.clicked.connect(self.start_calc)
+        self.dp = DataProcessor()
 
     def file_browser(self):
         fname = QFileDialog.getOpenFileName(self, "Open file", filter="CSV files (*.csv)")
         self.file_path.setText(fname[0])
 
     def start_calc(self):
-        self.path = self.file_path.text()
-        self.phrase = self.text_area.toPlainText()
-        self._do_work()
-
-    def _do_work(self):
-        self.thread = QThread()
-        self.worker = Worker()
-        self.worker.moveToThread(self.thread)
-        self.thread.started.connect(self.worker.run)
-        self.worker.finished.connect(self.thread.quit)
-        self.worker.finished.connect(self.worker.deleteLater)
-        self.thread.finished.connect(self.thread.deleteLater)
-        self.thread.start()
+        self.dp.start_processing(self.file_path.text(), self.text_area.toPlainText().split(","))
+        result = self.dp.get_result()
+        self._set_response("spam" if result["ham"] < result["spam"] else "ham")
 
     def _set_response(self, rs: str):
         self.response.setText(rs)
 
-
-class Worker(QObject):
-    finished = pyqtSignal()
-
-    def run(self):
-        """Paste long-time task here"""
-        self.finished.emit()
