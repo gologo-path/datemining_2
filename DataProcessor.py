@@ -9,17 +9,24 @@ class DataProcessor:
     spam = []
     words = []
     result = dict()
+    categories = dict()
 
     def get_result(self) -> dict:
         return self.result
 
-    def start_processing(self, file_path: str, words: list):
-        if file_path != self.file_path or words != self.words:
+    def start_processing(self, file_path: str, words: str):
+        ham = self._to_single_list(self.ham.copy())
+        spam = self._to_single_list(self.spam.copy())
+        categories = self.categories.copy()
 
+        if file_path == self.file_path and words == self.words:
+            return
+
+        if file_path != self.file_path:
             self.file_path = file_path
-            self.words = words
 
             categories = self._load_from_file()
+            self.categories = categories.copy()
 
             for line in categories["ham"]:
                 self.ham.append(self._stemming(self._remove_stopwords(self._tokenization(self._clean_str(line)))))
@@ -30,28 +37,53 @@ class DataProcessor:
             ham = self._to_single_list(self.ham.copy())
             spam = self._to_single_list(self.spam.copy())
 
+        if words != self.words:
+            self.words = words
+            words = self._stemming(self._remove_stopwords(self._tokenization(self._clean_str(words))))
+
             for word in words:
                 if word not in ham:
-                    ham.append(self._stemming([word.lower()])[0])
+                    ham.append(word)
 
                 if word not in spam:
-                    spam.append(self._stemming([word.lower()])[0])
+                    spam.append(word)
 
-            length = len(categories["ham"]) + len(categories["spam"])
-            Pham = len(categories["ham"]) / length
-            Pspam = len(categories["spam"]) / length
+            # self.file_path = file_path
+            # self.words = words
+            #
+            # categories = self._load_from_file()
+            #
+            # for line in categories["ham"]:
+            #     self.ham.append(self._stemming(self._remove_stopwords(self._tokenization(self._clean_str(line)))))
+            #
+            # for line in categories["spam"]:
+            #     self.spam.append(self._stemming(self._remove_stopwords(self._tokenization(self._clean_str(line)))))
+            #
+            # ham = self._to_single_list(self.ham.copy())
+            # spam = self._to_single_list(self.spam.copy())
+            #
+            # for word in words:
+            #     if word not in ham:
+            #         ham.append(self._stemming([word.lower()])[0])
+            #
+            #     if word not in spam:
+            #         spam.append(self._stemming([word.lower()])[0])
 
-            test_message_ham = 0
-            test_message_spam = 0
+        length = len(categories["ham"]) + len(categories["spam"])
+        Pham = len(categories["ham"]) / length
+        Pspam = len(categories["spam"]) / length
 
-            for word in words:
-                test_message_spam += self.get_word_count(word.lower(), spam)
-                test_message_ham += self.get_word_count(word.lower(), ham)
+        test_message_ham = 0
+        test_message_spam = 0
 
-            test_message_ham = (Pham * test_message_ham) / length
-            test_message_spam = (Pspam * test_message_spam) / length
+        for word in words:
+            test_message_spam += self.get_word_count(word, spam)
+            test_message_ham += self.get_word_count(word, ham)
 
-            self.result = {"ham": test_message_ham, "spam": test_message_spam}
+        test_message_ham = (Pham * test_message_ham) / length
+        test_message_spam = (Pspam * test_message_spam) / length
+
+        self.result = {"ham": test_message_ham, "spam": test_message_spam}
 
     def get_P(self, amount: int, total_amount: int) -> float:
         return amount / total_amount

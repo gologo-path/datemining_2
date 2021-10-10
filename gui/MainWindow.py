@@ -19,7 +19,7 @@ class MainWindow(QMainWindow):
         self.file_path.setText(fname[0])
 
     def start_calc(self):
-        self.dp.start_processing(self.file_path.text(), self.text_area.toPlainText().split(","))
+        self.dp.start_processing(self.file_path.text(), self.text_area.toPlainText())
         result = self.dp.get_result()
         self._set_response("spam" if result["ham"] < result["spam"] else "ham")
 
